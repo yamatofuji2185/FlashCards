@@ -1,0 +1,265 @@
+:root {
+  --bg-0: #fbf7ec;
+  --bg-1: #f0e3c3;
+  --ink: #1d2c3a;
+  --brand: #005088;
+  --brand-soft: #6fb0d8;
+  --ok: #2f8f46;
+  --warn: #ca6d15;
+  --card: rgba(255, 255, 255, 0.9);
+  --shadow: 0 14px 38px rgba(20, 40, 60, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Avenir Next", "Hiragino Kaku Gothic ProN", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 12%, rgba(0, 80, 136, 0.18), transparent 45%),
+    radial-gradient(circle at 90% 90%, rgba(202, 109, 21, 0.18), transparent 42%),
+    linear-gradient(160deg, var(--bg-0), var(--bg-1));
+}
+
+.app-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  font-size: 1.4rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+}
+
+.card {
+  background: var(--card);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.connection-card details {
+  width: 100%;
+}
+
+.connection-card summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.connection-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.connection-card summary::after {
+  content: "▼";
+  float: right;
+  font-size: 0.8rem;
+  color: #4a5f6f;
+  transition: transform 180ms ease;
+}
+
+.connection-card details[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.accordion-body {
+  margin-top: 10px;
+}
+
+#saveConnectionButton {
+  margin-top: 10px;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+label {
+  display: block;
+  font-size: 0.84rem;
+  margin: 8px 0 4px;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid #9db2bf;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 1rem;
+  background: #ffffff;
+}
+
+.config-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.status-panel {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.lamp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #808b95;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.18);
+}
+
+.btn {
+  border: 0;
+  border-radius: 11px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.btn-primary {
+  background: linear-gradient(130deg, var(--brand), #3c7ca4);
+}
+
+.btn-success {
+  background: linear-gradient(130deg, var(--ok), #56b368);
+}
+
+.btn-warning {
+  background: linear-gradient(130deg, var(--warn), #e8a14a);
+}
+
+.study-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.card-counter {
+  text-align: center;
+  font-weight: 700;
+}
+
+.flashcard {
+  perspective: 1200px;
+  min-height: 320px;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  transition: transform 480ms ease;
+  transform-style: preserve-3d;
+}
+
+.flashcard-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flash-face {
+  position: absolute;
+  width: 100%;
+  min-height: 320px;
+  inset: 0;
+  border: 1px solid rgba(18, 54, 82, 0.22);
+  border-radius: 16px;
+  background: #fff;
+  backface-visibility: hidden;
+  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.flash-back {
+  transform: rotateY(180deg);
+}
+
+.flash-face h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5f6f;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.flash-face p {
+  margin: 0;
+  line-height: 1.45;
+  font-size: 1.1rem;
+}
+
+#frontImage {
+  width: 100%;
+  max-height: 170px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid #dce5ea;
+  background: #f5f8fa;
+}
+
+.description {
+  font-size: 0.95rem;
+  color: #435b6b;
+}
+
+.judge-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.judge-actions .btn {
+  flex: 1;
+}
+
+@media (max-width: 740px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flashcard,
+  .flashcard-inner,
+  .flash-face {
+    min-height: 280px;
+  }
+}

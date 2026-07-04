@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#005088" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>フラッシュカード</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="top-bar">
+        <div class="brand">フラッシュカード</div>
+        <button id="syncButton" class="btn btn-primary" type="button">同期</button>
+      </header>
+
+      <section class="card connection-card">
+        <details id="connectionAccordion" open>
+          <summary>接続設定</summary>
+          <div class="accordion-body">
+            <label for="gasUrlInput">GAS エンドポイントURL</label>
+            <input id="gasUrlInput" type="url" placeholder="https://script.google.com/.../exec" />
+            <button id="saveConnectionButton" class="btn btn-primary" type="button">設定を保存</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="range-panel card">
+        <h2>学習範囲</h2>
+        <div class="config-grid">
+          <div>
+            <label for="orderSelect">出題順</label>
+            <select id="orderSelect">
+              <option value="sequential">順番通り</option>
+              <option value="random">ランダム</option>
+            </select>
+          </div>
+          <div>
+            <label for="directionSelect">出題方向</label>
+            <select id="directionSelect">
+              <option value="normal">通常（質問 → 解答）</option>
+              <option value="reverse">逆引き（解答 → 質問）</option>
+            </select>
+          </div>
+          <div>
+            <label for="filterSelect">抽出条件</label>
+            <select id="filterSelect">
+              <option value="all">全件</option>
+              <option value="pending">未完了（まだ）のみ</option>
+            </select>
+          </div>
+        </div>
+        <div class="config-grid">
+          <div>
+            <label for="level1Select">レベル1（科目）</label>
+            <select id="level1Select"></select>
+          </div>
+          <div>
+            <label for="level2Select">レベル2（単元）</label>
+            <select id="level2Select"></select>
+          </div>
+          <div>
+            <label for="level3Select">レベル3（項目）</label>
+            <select id="level3Select"></select>
+          </div>
+        </div>
+        <button id="startButton" class="btn btn-primary" type="button">学習開始</button>
+      </section>
+
+      <section class="status-panel card">
+        <div class="lamp"><span class="dot" id="onlineLamp"></span><span id="onlineText">オフライン</span></div>
+        <div class="lamp"><span class="dot" id="cacheLamp"></span><span id="cacheText">ローカル件数: 0</span></div>
+        <div class="lamp"><span class="dot" id="queueLamp"></span><span id="queueText">同期待ち: 0</span></div>
+      </section>
+
+      <main class="study-panel card" id="studyPanel" hidden>
+        <div class="card-counter" id="cardCounter">0 / 0</div>
+        <div class="flashcard" id="flashcard" role="button" aria-label="flip card" tabindex="0">
+          <div class="flashcard-inner" id="flashcardInner">
+            <article class="flash-face flash-front">
+              <h3 id="frontTitle">表面</h3>
+              <img id="frontImage" alt="カード画像" hidden />
+              <p id="frontText"></p>
+            </article>
+            <article class="flash-face flash-back">
+              <h3 id="backTitle">裏面</h3>
+              <p id="backText"></p>
+              <p id="backDescription" class="description"></p>
+            </article>
+          </div>
+        </div>
+
+        <div class="judge-actions">
+          <button id="rememberedButton" class="btn btn-success" type="button">覚えた</button>
+          <button id="yetButton" class="btn btn-warning" type="button">まだ</button>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
