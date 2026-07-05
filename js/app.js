@@ -222,10 +222,21 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
 
       listEl.hidden = !picker.isOpen;
     },
+    positionList() {
+      const rect = wrapper.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+      const top = Math.max(8, Math.round(rect.bottom + 4));
+      const bottomSpace = Math.max(120, viewportHeight - top - 12);
+      listEl.style.setProperty("--picker-top", `${top}px`);
+      listEl.style.setProperty("--picker-left", `${Math.max(8, Math.round(rect.left))}px`);
+      listEl.style.setProperty("--picker-width", `${Math.round(rect.width)}px`);
+      listEl.style.setProperty("--picker-max-height", `${bottomSpace}px`);
+    },
     open(showAll = false) {
       picker.isOpen = true;
       wrapper.classList.add("is-open");
       document.body.classList.add("picker-open");
+      picker.positionList();
       picker.render(showAll);
     },
     close() {
@@ -248,6 +259,16 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
   inputEl.setAttribute("autocomplete", "off");
   inputEl.addEventListener("focus", () => picker.open());
   inputEl.addEventListener("input", () => picker.open());
+  window.addEventListener("resize", () => {
+    if (picker.isOpen) {
+      picker.positionList();
+    }
+  });
+  window.addEventListener("scroll", () => {
+    if (picker.isOpen) {
+      picker.positionList();
+    }
+  }, true);
   inputEl.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       picker.close();

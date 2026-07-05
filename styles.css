@@ -451,11 +451,12 @@ select {
 
   .editable-picker.is-open .editable-picker-list {
     position: fixed;
-    top: 12vh;
-    left: 12px;
-    right: 12px;
+    top: var(--picker-top, 12vh);
+    left: var(--picker-left, 12px);
+    right: auto;
+    width: var(--picker-width, calc(100vw - 24px));
     height: auto;
-    max-height: min(calc(var(--picker-option-count, 1) * 58px + 24px), 72vh);
+    max-height: min(calc(var(--picker-option-count, 1) * 58px + 24px), var(--picker-max-height, 72vh));
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
