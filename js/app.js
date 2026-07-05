@@ -238,6 +238,11 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
       document.body.classList.add("picker-open");
       picker.positionList();
       picker.render(showAll);
+      if (window.matchMedia("(max-width: 740px)").matches) {
+        window.requestAnimationFrame(() => {
+          wrapper.scrollIntoView({ block: "center", inline: "nearest" });
+        });
+      }
     },
     close() {
       picker.isOpen = false;

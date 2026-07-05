@@ -29,10 +29,6 @@ body {
     linear-gradient(160deg, var(--bg-0), var(--bg-1));
 }
 
-body.picker-open {
-  overflow: hidden;
-}
-
 .app-shell {
   max-width: 980px;
   margin: 0 auto;
