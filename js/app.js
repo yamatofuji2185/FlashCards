@@ -174,6 +174,7 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
       const rawOptions = getOptions();
       const options = limitOptionsForInput(rawOptions, showAll ? "" : inputEl.value, showAll ? Infinity : 80);
       listEl.innerHTML = "";
+      listEl.style.setProperty("--picker-option-count", String(Math.max(1, options.length)));
 
       if (options.length === 0) {
         const emptyEl = document.createElement("div");

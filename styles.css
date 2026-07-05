@@ -454,9 +454,8 @@ select {
     top: 12vh;
     left: 12px;
     right: 12px;
-    bottom: 16px;
-    height: calc(88vh - 28px);
-    max-height: none;
+    height: auto;
+    max-height: min(calc(var(--picker-option-count, 1) * 58px + 24px), 72vh);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
