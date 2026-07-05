@@ -39,22 +39,16 @@ const els = {
   singleCreatePanel: document.getElementById("singleCreatePanel"),
   textCreatePanel: document.getElementById("textCreatePanel"),
   createCardIdInput: document.getElementById("createCardIdInput"),
-  createCardIdList: document.getElementById("createCardIdList"),
   createLevel1Input: document.getElementById("createLevel1Input"),
   createLevel2Input: document.getElementById("createLevel2Input"),
   createLevel3Input: document.getElementById("createLevel3Input"),
-  createLevel1List: document.getElementById("createLevel1List"),
-  createLevel2List: document.getElementById("createLevel2List"),
-  createLevel3List: document.getElementById("createLevel3List"),
   createTextLevel1Input: document.getElementById("createTextLevel1Input"),
   createTextLevel2Input: document.getElementById("createTextLevel2Input"),
   createTextLevel3Input: document.getElementById("createTextLevel3Input"),
-  createTextLevel1List: document.getElementById("createTextLevel1List"),
-  createTextLevel2List: document.getElementById("createTextLevel2List"),
-  createTextLevel3List: document.getElementById("createTextLevel3List"),
   singleQuestionInput: document.getElementById("singleQuestionInput"),
   singleAnswerInput: document.getElementById("singleAnswerInput"),
   singleDescriptionInput: document.getElementById("singleDescriptionInput"),
+  singleImageIdInput: document.getElementById("singleImageIdInput"),
   generateSingleButton: document.getElementById("generateSingleButton"),
   singleAddButton: document.getElementById("singleAddButton"),
   singleDeleteButton: document.getElementById("singleDeleteButton"),
@@ -94,8 +88,197 @@ const state = {
   studyCards: [],
   index: 0,
   flipped: false,
-  createMode: "single"
+  createMode: "single",
+  editablePickers: []
 };
+
+function normalizeSearchText(value) {
+  return String(value || "").trim().toLocaleLowerCase("ja");
+}
+
+function optionMatchesInput(option, inputValue) {
+  const query = normalizeSearchText(inputValue);
+  if (!query) {
+    return true;
+  }
+
+  const searchable = normalizeSearchText(`${option.value} ${option.label || ""}`);
+  return searchable.includes(query);
+}
+
+function limitOptionsForInput(options, inputValue, limit = 60) {
+  return options.filter((option) => option.value && optionMatchesInput(option, inputValue)).slice(0, limit);
+}
+
+function simpleOptions(values) {
+  return values.map((value) => ({ value: String(value), label: "" }));
+}
+
+function cardIdOptions() {
+  return state.cards
+    .filter((card) => !isUuidLikeId(card.id))
+    .slice()
+    .sort((a, b) => String(a.id || "").localeCompare(String(b.id || ""), "ja", { numeric: true }))
+    .map((card) => ({
+      value: String(card.id || ""),
+      label: [
+        String(card.categoryL1 || "").trim(),
+        String(card.question || "").trim()
+      ].filter(Boolean).join(" / ")
+    }));
+}
+
+function level1Options() {
+  return simpleOptions(toUniqueSortedValues(state.cards.map((card) => card.categoryL1)));
+}
+
+function level2Options(level1Value) {
+  const filtered = filterByLevels(state.cards, level1Value, "", "");
+  return simpleOptions(toUniqueSortedValues(filtered.map((card) => card.categoryL2)));
+}
+
+function level3Options(level1Value, level2Value) {
+  const filtered = filterByLevels(state.cards, level1Value, level2Value, "");
+  return simpleOptions(toUniqueSortedValues(filtered.map((card) => card.categoryL3)));
+}
+
+function createEditablePicker(inputEl, getOptions, onSelect = () => {}) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "editable-picker";
+  inputEl.parentNode.insertBefore(wrapper, inputEl);
+  wrapper.appendChild(inputEl);
+
+  const toggleButton = document.createElement("button");
+  toggleButton.className = "editable-picker-toggle";
+  toggleButton.type = "button";
+  toggleButton.setAttribute("aria-label", "候補を表示");
+  toggleButton.textContent = "⌄";
+  wrapper.appendChild(toggleButton);
+
+  const listEl = document.createElement("div");
+  listEl.className = "editable-picker-list";
+  listEl.setAttribute("role", "listbox");
+  listEl.hidden = true;
+  wrapper.appendChild(listEl);
+
+  const picker = {
+    inputEl,
+    listEl,
+    isOpen: false,
+    render(showAll = false) {
+      const rawOptions = getOptions();
+      const options = limitOptionsForInput(rawOptions, showAll ? "" : inputEl.value);
+      listEl.innerHTML = "";
+
+      if (options.length === 0) {
+        const emptyEl = document.createElement("div");
+        emptyEl.className = "editable-picker-empty";
+        emptyEl.textContent = "一致する候補はありません";
+        listEl.appendChild(emptyEl);
+      } else {
+        for (const option of options) {
+          const itemButton = document.createElement("button");
+          itemButton.className = "editable-picker-option";
+          itemButton.type = "button";
+          itemButton.setAttribute("role", "option");
+          itemButton.dataset.value = option.value;
+
+          const valueEl = document.createElement("span");
+          valueEl.className = "editable-picker-value";
+          valueEl.textContent = option.value;
+          itemButton.appendChild(valueEl);
+
+          if (option.label) {
+            const labelEl = document.createElement("span");
+            labelEl.className = "editable-picker-label";
+            labelEl.textContent = option.label;
+            itemButton.appendChild(labelEl);
+          }
+
+          itemButton.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            inputEl.value = option.value;
+            inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+            inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+            onSelect(option.value);
+            picker.close();
+          });
+
+          listEl.appendChild(itemButton);
+        }
+      }
+
+      listEl.hidden = !picker.isOpen;
+    },
+    open(showAll = false) {
+      picker.isOpen = true;
+      wrapper.classList.add("is-open");
+      picker.render(showAll);
+    },
+    close() {
+      picker.isOpen = false;
+      wrapper.classList.remove("is-open");
+      listEl.hidden = true;
+    },
+    refresh() {
+      if (picker.isOpen) {
+        picker.render();
+      }
+    }
+  };
+
+  inputEl.setAttribute("autocomplete", "off");
+  inputEl.addEventListener("focus", () => picker.open());
+  inputEl.addEventListener("input", () => picker.open());
+  inputEl.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      picker.close();
+    }
+  });
+  toggleButton.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    if (picker.isOpen) {
+      picker.close();
+    } else {
+      inputEl.focus();
+      picker.open(true);
+    }
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!wrapper.contains(event.target)) {
+      picker.close();
+    }
+  });
+
+  return picker;
+}
+
+function setupEditablePickers() {
+  state.editablePickers = [
+    createEditablePicker(els.createCardIdInput, cardIdOptions, loadSingleCardForEdit),
+    createEditablePicker(els.createLevel1Input, level1Options, () => {
+      populateCreateLevel2(state.cards);
+      populateCreateLevel3(state.cards);
+    }),
+    createEditablePicker(els.createLevel2Input, () => level2Options(els.createLevel1Input.value), () => {
+      populateCreateLevel3(state.cards);
+    }),
+    createEditablePicker(els.createLevel3Input, () => level3Options(els.createLevel1Input.value, els.createLevel2Input.value)),
+    createEditablePicker(els.createTextLevel1Input, level1Options, () => {
+      populateCreateTextLevel2(state.cards);
+      populateCreateTextLevel3(state.cards);
+    }),
+    createEditablePicker(els.createTextLevel2Input, () => level2Options(els.createTextLevel1Input.value), () => {
+      populateCreateTextLevel3(state.cards);
+    }),
+    createEditablePicker(els.createTextLevel3Input, () => level3Options(els.createTextLevel1Input.value, els.createTextLevel2Input.value))
+  ];
+}
+
+function updateEditablePickers() {
+  state.editablePickers.forEach((picker) => picker.refresh());
+}
 
 // 保存済み設定を入力欄に反映する。
 function bindSettingsToUi() {
@@ -184,31 +367,7 @@ function populateRangeSelectors(cards) {
 }
 
 function populateCreateRangeSelectors(cards) {
-  const l1 = toUniqueSortedValues(cards.map((card) => card.categoryL1));
-  setCardIdOptions(cards);
-  setSelectOptions(els.createLevel1List, l1, false);
-  setSelectOptions(els.createTextLevel1List, l1, false);
-  populateCreateLevel2(cards);
-  populateCreateTextLevel2(cards);
-  populateCreateLevel3(cards);
-  populateCreateTextLevel3(cards);
-}
-
-function setCardIdOptions(cards) {
-  els.createCardIdList.innerHTML = "";
-  cards
-    .filter((card) => !isUuidLikeId(card.id))
-    .slice()
-    .sort((a, b) => String(a.id || "").localeCompare(String(b.id || ""), "ja", { numeric: true }))
-    .forEach((card) => {
-      const option = document.createElement("option");
-      option.value = String(card.id || "");
-      option.label = [
-        String(card.categoryL1 || "").trim(),
-        String(card.question || "").trim()
-      ].filter(Boolean).join(" / ");
-      els.createCardIdList.appendChild(option);
-    });
+  updateEditablePickers();
 }
 
 function isUuidLikeId(id) {
@@ -258,27 +417,19 @@ function populateLevel3(cards) {
 }
 
 function populateCreateLevel2(cards) {
-  const filtered = filterByLevels(cards, els.createLevel1Input.value, "", "");
-  const l2 = toUniqueSortedValues(filtered.map((card) => card.categoryL2));
-  setSelectOptions(els.createLevel2List, l2, false);
+  updateEditablePickers();
 }
 
 function populateCreateTextLevel2(cards) {
-  const filtered = filterByLevels(cards, els.createTextLevel1Input.value, "", "");
-  const l2 = toUniqueSortedValues(filtered.map((card) => card.categoryL2));
-  setSelectOptions(els.createTextLevel2List, l2, false);
+  updateEditablePickers();
 }
 
 function populateCreateLevel3(cards) {
-  const filtered = filterByLevels(cards, els.createLevel1Input.value, els.createLevel2Input.value, "");
-  const l3 = toUniqueSortedValues(filtered.map((card) => card.categoryL3));
-  setSelectOptions(els.createLevel3List, l3, false);
+  updateEditablePickers();
 }
 
 function populateCreateTextLevel3(cards) {
-  const filtered = filterByLevels(cards, els.createTextLevel1Input.value, els.createTextLevel2Input.value, "");
-  const l3 = toUniqueSortedValues(filtered.map((card) => card.categoryL3));
-  setSelectOptions(els.createTextLevel3List, l3, false);
+  updateEditablePickers();
 }
 
 function showCreateStatus(message, isError = false) {
@@ -324,6 +475,7 @@ function clearSingleCreateForm({ keepId = false } = {}) {
   els.singleQuestionInput.value = "";
   els.singleAnswerInput.value = "";
   els.singleDescriptionInput.value = "";
+  els.singleImageIdInput.value = "";
 }
 
 function fillSingleCreateForm(card) {
@@ -334,6 +486,7 @@ function fillSingleCreateForm(card) {
   els.singleQuestionInput.value = String(card.question || "");
   els.singleAnswerInput.value = String(card.answer || "");
   els.singleDescriptionInput.value = String(card.description || "");
+  els.singleImageIdInput.value = String(card.imageId || "");
   populateCreateLevel2(state.cards);
   populateCreateLevel3(state.cards);
 }
@@ -383,7 +536,7 @@ async function addSingleCard() {
     question,
     answer,
     description: String(els.singleDescriptionInput.value || "").trim(),
-    imageId: existingCard ? String(existingCard.imageId || "") : "",
+    imageId: String(els.singleImageIdInput.value || "").trim(),
     status: existingCard ? String(existingCard.status || STATUS.yet) : STATUS.yet
   };
 
@@ -735,6 +888,7 @@ async function init() {
     }
   }
 
+  setupEditablePickers();
   state.cards = await getAllCards();
   populateRangeSelectors(state.cards);
   populateCreateRangeSelectors(state.cards);

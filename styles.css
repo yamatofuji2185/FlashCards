@@ -183,6 +183,87 @@ select {
   background: #ffffff;
 }
 
+.editable-picker {
+  position: relative;
+}
+
+.editable-picker input {
+  padding-right: 44px;
+}
+
+.editable-picker-toggle {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 42px;
+  height: calc(100% - 2px);
+  border: 0;
+  border-left: 1px solid #d0dbe2;
+  border-radius: 0 9px 9px 0;
+  background: #eef4f7;
+  color: #2f4f63;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.editable-picker-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #8da9ba;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(20, 40, 60, 0.18);
+}
+
+.editable-picker-option {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #edf2f5;
+  padding: 11px 12px;
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.editable-picker-option:last-child {
+  border-bottom: 0;
+}
+
+.editable-picker-option:active,
+.editable-picker-option:focus {
+  background: #e8f2f7;
+  outline: none;
+}
+
+.editable-picker-value {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.editable-picker-label {
+  color: #607584;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.editable-picker-empty {
+  padding: 12px;
+  color: #607584;
+  font-size: 0.92rem;
+}
+
 .config-grid {
   margin-top: 8px;
   display: grid;

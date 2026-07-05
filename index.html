@@ -68,23 +68,19 @@
 
             <div id="singleCreatePanel" class="create-panel-body">
               <label for="createCardIdInput">カードID</label>
-              <input id="createCardIdInput" list="createCardIdList" type="text" placeholder="既存IDを入力すると編集できます" />
-              <datalist id="createCardIdList"></datalist>
+              <input id="createCardIdInput" type="text" placeholder="既存IDを入力すると編集できます" />
               <div class="config-grid">
                 <div>
                   <label for="createLevel1Input">L1（科目）</label>
-                  <input id="createLevel1Input" list="createLevel1List" type="text" placeholder="科目を入力または選択" />
-                  <datalist id="createLevel1List"></datalist>
+                  <input id="createLevel1Input" type="text" placeholder="科目を入力または選択" />
                 </div>
                 <div>
                   <label for="createLevel2Input">L2（単元）</label>
-                  <input id="createLevel2Input" list="createLevel2List" type="text" placeholder="単元を入力または選択" />
-                  <datalist id="createLevel2List"></datalist>
+                  <input id="createLevel2Input" type="text" placeholder="単元を入力または選択" />
                 </div>
                 <div>
                   <label for="createLevel3Input">L3（項目）</label>
-                  <input id="createLevel3Input" list="createLevel3List" type="text" placeholder="項目を入力または選択" />
-                  <datalist id="createLevel3List"></datalist>
+                  <input id="createLevel3Input" type="text" placeholder="項目を入力または選択" />
                 </div>
               </div>
               <label for="singleQuestionInput">問題</label>
@@ -93,6 +89,8 @@
               <input id="singleAnswerInput" type="text" placeholder="例: 約365日" />
               <label for="singleDescriptionInput">解説</label>
               <textarea id="singleDescriptionInput" rows="4" placeholder="任意の解説"></textarea>
+              <label for="singleImageIdInput">画像ID / 画像URL</label>
+              <input id="singleImageIdInput" type="text" placeholder="Google Drive の画像IDまたは共有URL" />
               <div class="create-actions">
                 <button id="generateSingleButton" class="btn btn-secondary" type="button">AIで解答・解説を作成</button>
                 <button id="singleAddButton" class="btn btn-primary" type="button">カードを保存</button>
@@ -104,18 +102,15 @@
               <div class="config-grid">
                 <div>
                   <label for="createTextLevel1Input">L1（科目）</label>
-                  <input id="createTextLevel1Input" list="createTextLevel1List" type="text" placeholder="科目を入力または選択" />
-                  <datalist id="createTextLevel1List"></datalist>
+                  <input id="createTextLevel1Input" type="text" placeholder="科目を入力または選択" />
                 </div>
                 <div>
                   <label for="createTextLevel2Input">L2（単元）</label>
-                  <input id="createTextLevel2Input" list="createTextLevel2List" type="text" placeholder="単元を入力または選択" />
-                  <datalist id="createTextLevel2List"></datalist>
+                  <input id="createTextLevel2Input" type="text" placeholder="単元を入力または選択" />
                 </div>
                 <div>
                   <label for="createTextLevel3Input">L3（項目）</label>
-                  <input id="createTextLevel3Input" list="createTextLevel3List" type="text" placeholder="項目を入力または選択" />
-                  <datalist id="createTextLevel3List"></datalist>
+                  <input id="createTextLevel3Input" type="text" placeholder="項目を入力または選択" />
                 </div>
               </div>
               <label for="textSourceInput">ソーステキスト</label>
