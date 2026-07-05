@@ -116,7 +116,11 @@ function simpleOptions(values) {
 }
 
 function cardIdOptions() {
-  return state.cards
+  const categoryL1 = String(els.createLevel1Input.value || "").trim();
+  const categoryL2 = String(els.createLevel2Input.value || "").trim();
+  const categoryL3 = String(els.createLevel3Input.value || "").trim();
+
+  return filterByLevels(state.cards, categoryL1, categoryL2, categoryL3)
     .filter((card) => !isUuidLikeId(card.id))
     .slice()
     .sort((a, b) => String(a.id || "").localeCompare(String(b.id || ""), "ja", { numeric: true }))
@@ -920,6 +924,7 @@ async function init() {
   });
 
   els.createLevel2Input.addEventListener("input", () => populateCreateLevel3(state.cards));
+  els.createLevel3Input.addEventListener("input", updateEditablePickers);
 
   els.createTextLevel1Input.addEventListener("input", () => {
     populateCreateTextLevel2(state.cards);
