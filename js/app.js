@@ -178,10 +178,10 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
         listEl.appendChild(emptyEl);
       } else {
         for (const option of options) {
-          const itemButton = document.createElement("button");
+          const itemButton = document.createElement("div");
           itemButton.className = "editable-picker-option";
-          itemButton.type = "button";
           itemButton.setAttribute("role", "option");
+          itemButton.setAttribute("tabindex", "0");
           itemButton.dataset.value = option.value;
 
           const valueEl = document.createElement("span");
@@ -203,6 +203,13 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
             onSelect(option.value);
             picker.close();
           });
+          itemButton.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") {
+              return;
+            }
+            event.preventDefault();
+            itemButton.click();
+          });
 
           listEl.appendChild(itemButton);
         }
@@ -213,11 +220,13 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
     open(showAll = false) {
       picker.isOpen = true;
       wrapper.classList.add("is-open");
+      document.body.classList.add("picker-open");
       picker.render(showAll);
     },
     close() {
       picker.isOpen = false;
       wrapper.classList.remove("is-open");
+      document.body.classList.remove("picker-open");
       listEl.hidden = true;
     },
     refresh() {
@@ -226,6 +235,10 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
       }
     }
   };
+
+  listEl.addEventListener("touchmove", (event) => {
+    event.stopPropagation();
+  }, { passive: true });
 
   inputEl.setAttribute("autocomplete", "off");
   inputEl.addEventListener("focus", () => picker.open());

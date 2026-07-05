@@ -50,6 +50,8 @@ export function buildDriveImageUrls(imageId) {
 
   const encodedId = encodeURIComponent(id);
   return [
+    `https://lh3.googleusercontent.com/d/${encodedId}=w1600`,
+    `https://lh3.googleusercontent.com/d/${encodedId}=s1600`,
     `https://drive.google.com/thumbnail?id=${encodedId}&sz=w1600`,
     `https://drive.google.com/thumbnail?id=${encodedId}&sz=w1000`,
     `https://drive.google.com/uc?export=view&id=${encodedId}`,

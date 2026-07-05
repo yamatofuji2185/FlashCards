@@ -29,6 +29,10 @@ body {
     linear-gradient(160deg, var(--bg-0), var(--bg-1));
 }
 
+body.picker-open {
+  overflow: hidden;
+}
+
 .app-shell {
   max-width: 980px;
   margin: 0 auto;
@@ -215,6 +219,8 @@ select {
   z-index: 30;
   max-height: 260px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   border: 1px solid #8da9ba;
   border-radius: 10px;
@@ -228,7 +234,6 @@ select {
 
 .editable-picker-option {
   width: 100%;
-  border: 0;
   border-bottom: 1px solid #edf2f5;
   padding: 11px 12px;
   display: grid;
@@ -236,8 +241,9 @@ select {
   text-align: left;
   background: #fff;
   color: var(--ink);
-  font: inherit;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .editable-picker-option:last-child {
@@ -449,8 +455,12 @@ select {
     left: 12px;
     right: 12px;
     bottom: 16px;
+    height: calc(88vh - 28px);
     max-height: none;
-    overflow-y: scroll;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     z-index: 1000;
     border-radius: 12px;
