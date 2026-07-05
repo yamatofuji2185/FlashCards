@@ -1,4 +1,4 @@
-const STATIC_CACHE = "flashcard-static-v18";
+const STATIC_CACHE = "flashcard-static-v19";
 const IMAGE_CACHE = "flashcard-images-v2";
 const STATIC_ASSETS = [
   "./",
