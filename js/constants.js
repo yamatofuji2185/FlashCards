@@ -7,6 +7,8 @@ export const SETTING_KEYS = {
   order: "flashcard.order",
   direction: "flashcard.direction",
   filter: "flashcard.filter",
+  aiGrade: "flashcard.aiGrade",
+  aiDifficulty: "flashcard.aiDifficulty",
   syncQueue: "flashcard.syncQueue"
 };
 
@@ -17,9 +19,24 @@ export const STATUS = {
 
 export const IMAGE_CACHE_NAME = "flashcard-images-v1";
 
-export function buildDriveImageUrl(imageId) {
-  if (!imageId) {
+export function normalizeDriveImageId(imageId) {
+  const value = String(imageId || "").trim();
+  if (!value) {
     return "";
   }
-  return `https://docs.google.com/uc?export=view&id=${encodeURIComponent(imageId)}`;
+
+  const idMatch = value.match(/[?&]id=([^&]+)/) || value.match(/\/d\/([^/]+)/);
+  if (idMatch) {
+    return decodeURIComponent(idMatch[1]);
+  }
+
+  return value;
+}
+
+export function buildDriveImageUrl(imageId) {
+  const id = normalizeDriveImageId(imageId);
+  if (!id) {
+    return "";
+  }
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1000`;
 }

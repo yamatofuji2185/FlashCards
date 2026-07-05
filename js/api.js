@@ -35,13 +35,13 @@ function buildNetworkHint(url) {
   return hints.join("\n");
 }
 
-function executeJsonp(endpoint, extraParams = {}) {
+function executeJsonp(endpoint, extraParams = {}, timeoutMs = 10000) {
   return new Promise((resolve, reject) => {
     const callbackName = `__flashcardJsonp_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
     const timeoutId = window.setTimeout(() => {
       cleanup();
       reject(new Error("JSONPの応答がタイムアウトしました。GASのデプロイURLを確認してください。"));
-    }, 10000);
+    }, timeoutMs);
 
     const cleanup = () => {
       window.clearTimeout(timeoutId);
@@ -157,4 +157,90 @@ export async function postProgressToGas({ gasUrl, userId, items }) {
   }
 
   return { ok: true, updated: totalUpdated };
+}
+
+export async function generateCardsFromText({ gasUrl, text, categoryL1, categoryL2, categoryL3, numQuestions }) {
+  const endpoint = normalizeGasUrl(gasUrl);
+  const payload = JSON.stringify({
+    type: "generateFromText",
+    text,
+    categoryL1,
+    categoryL2,
+    categoryL3,
+    numQuestions
+  });
+
+  // GAS の POST はブラウザ側で CORS 失敗になってもサーバー処理だけ完了することがある。
+  // 書き込み系のAI生成は二重実行を避けるため、最初から JSONP だけを使う。
+  const result = await executeJsonp(endpoint, {
+    mode: "generateFromText",
+    payload
+  }, 120000);
+
+  if (!result || result.ok !== true) {
+    throw new Error(`AI生成(JSONP)でエラーが返されました: ${result && result.error ? result.error : "unknown error"}`);
+  }
+
+  return result;
+}
+
+export async function generateSingleAnswer({ gasUrl, question, categoryL1, categoryL2, categoryL3 }) {
+  const endpoint = normalizeGasUrl(gasUrl);
+  const payload = JSON.stringify({
+    type: "generateSingleAnswer",
+    question,
+    categoryL1,
+    categoryL2,
+    categoryL3
+  });
+
+  try {
+    const response = await fetch(endpoint.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: payload
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.ok === true) {
+        return data;
+      }
+    }
+  } catch {
+    // CORS やネットワークで失敗した場合は JSONP フォールバックへ移行する。
+  }
+
+  const result = await executeJsonp(endpoint, {
+    mode: "generateSingleAnswer",
+    payload
+  }, 120000);
+
+  if (!result || result.ok !== true) {
+    throw new Error(`AI生成(JSONP)でエラーが返されました: ${result && result.error ? result.error : "unknown error"}`);
+  }
+
+  return result;
+}
+
+export async function updateAppConfig({ gasUrl, grade, difficulty }) {
+  const endpoint = normalizeGasUrl(gasUrl);
+  const payload = JSON.stringify({
+    type: "updateAppConfig",
+    grade,
+    difficulty
+  });
+
+  const result = await executeJsonp(endpoint, {
+    mode: "updateAppConfig",
+    payload
+  });
+
+  if (!result || result.ok !== true) {
+    throw new Error(`AppConfig更新でエラーが返されました: ${result && result.error ? result.error : "unknown error"}`);
+  }
+
+  return result;
 }

@@ -70,6 +70,55 @@ export async function getAllCards() {
   });
 }
 
+export async function appendCards(cards) {
+  if (!Array.isArray(cards) || cards.length === 0) {
+    return 0;
+  }
+
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CARD_STORE, "readwrite");
+    const store = tx.objectStore(CARD_STORE);
+
+    cards.forEach((card) => {
+      const normalized = {
+        id: String(card.id || card.rowId || crypto.randomUUID()),
+        categoryL1: card.categoryL1 || "",
+        categoryL2: card.categoryL2 || "",
+        categoryL3: card.categoryL3 || "",
+        question: card.question || "",
+        answer: card.answer || "",
+        description: card.description || "",
+        imageId: card.imageId || "",
+        status: card.status || STATUS.yet
+      };
+      store.put(normalized);
+    });
+
+    tx.oncomplete = () => resolve(cards.length);
+    tx.onabort = () => reject(tx.error || new Error("appendCards aborted"));
+    tx.onerror = () => reject(tx.error || new Error("appendCards failed"));
+  });
+}
+
+export async function deleteCard(cardId) {
+  const id = String(cardId || "").trim();
+  if (!id) {
+    return false;
+  }
+
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CARD_STORE, "readwrite");
+    const store = tx.objectStore(CARD_STORE);
+    store.delete(id);
+
+    tx.oncomplete = () => resolve(true);
+    tx.onabort = () => reject(tx.error || new Error("deleteCard aborted"));
+    tx.onerror = () => reject(tx.error || new Error("deleteCard failed"));
+  });
+}
+
 export async function countCards() {
   const db = await openDb();
   return new Promise((resolve, reject) => {

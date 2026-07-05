@@ -4,7 +4,9 @@ const DEFAULT_SETTINGS = {
   gasUrl: "",
   order: "sequential",
   direction: "normal",
-  filter: "all"
+  filter: "all",
+  aiGrade: "中学1年",
+  aiDifficulty: "標準"
 };
 
 function getValue(key, fallback) {
@@ -19,7 +21,9 @@ export function loadSettings() {
     gasUrl: getValue(SETTING_KEYS.gasUrl, DEFAULT_SETTINGS.gasUrl),
     order: getValue(SETTING_KEYS.order, DEFAULT_SETTINGS.order),
     direction: getValue(SETTING_KEYS.direction, DEFAULT_SETTINGS.direction),
-    filter: getValue(SETTING_KEYS.filter, DEFAULT_SETTINGS.filter)
+    filter: getValue(SETTING_KEYS.filter, DEFAULT_SETTINGS.filter),
+    aiGrade: getValue(SETTING_KEYS.aiGrade, DEFAULT_SETTINGS.aiGrade),
+    aiDifficulty: getValue(SETTING_KEYS.aiDifficulty, DEFAULT_SETTINGS.aiDifficulty)
   };
 }
 
@@ -29,6 +33,8 @@ export function saveSettings(settings) {
   localStorage.setItem(SETTING_KEYS.order, settings.order || DEFAULT_SETTINGS.order);
   localStorage.setItem(SETTING_KEYS.direction, settings.direction || DEFAULT_SETTINGS.direction);
   localStorage.setItem(SETTING_KEYS.filter, settings.filter || DEFAULT_SETTINGS.filter);
+  localStorage.setItem(SETTING_KEYS.aiGrade, settings.aiGrade || DEFAULT_SETTINGS.aiGrade);
+  localStorage.setItem(SETTING_KEYS.aiDifficulty, settings.aiDifficulty || DEFAULT_SETTINGS.aiDifficulty);
 }
 
 // 同期待ちキューを配列として読み込む。

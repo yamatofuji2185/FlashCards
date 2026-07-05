@@ -23,6 +23,21 @@ function doGet(e) {
       return respondForGet_(e, { ok: true, updated: updated });
     }
 
+    if (e && e.parameter && e.parameter.mode === "generateFromText") {
+      const payload = JSON.parse((e.parameter && e.parameter.payload) || "{}");
+      return respondForGet_(e, handleGenerateFromTextRequest_(payload));
+    }
+
+    if (e && e.parameter && e.parameter.mode === "generateSingleAnswer") {
+      const payload = JSON.parse((e.parameter && e.parameter.payload) || "{}");
+      return respondForGet_(e, handleGenerateSingleAnswerRequest_(payload));
+    }
+
+    if (e && e.parameter && e.parameter.mode === "updateAppConfig") {
+      const payload = JSON.parse((e.parameter && e.parameter.payload) || "{}");
+      return respondForGet_(e, handleUpdateAppConfigRequest_(payload));
+    }
+
     const userId = (e && e.parameter && e.parameter.userId) || "";
     const cards = readCardsFromSheet_();
     return respondForGet_(e, { ok: true, userId: userId, cards: cards });
@@ -35,12 +50,217 @@ function doGet(e) {
 function doPost(e) {
   try {
     const payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+    if (payload && payload.type === "generateFromText") {
+      return jsonResponse_(handleGenerateFromTextRequest_(payload));
+    }
+
+    if (payload && payload.type === "generateSingleAnswer") {
+      return jsonResponse_(handleGenerateSingleAnswerRequest_(payload));
+    }
+
+    if (payload && payload.type === "updateAppConfig") {
+      return jsonResponse_(handleUpdateAppConfigRequest_(payload));
+    }
+
     const items = Array.isArray(payload.items) ? payload.items : [];
     const updated = applyStatusUpdates_(items);
     return jsonResponse_({ ok: true, updated: updated });
   } catch (error) {
     return jsonResponse_({ ok: false, error: String(error) });
   }
+}
+
+function handleGenerateFromTextRequest_(payload) {
+  const text = String(payload && payload.text || "").trim();
+  const categoryL1 = String(payload && payload.categoryL1 || "").trim();
+  const categoryL2 = String(payload && payload.categoryL2 || "").trim();
+  const categoryL3 = String(payload && payload.categoryL3 || "").trim();
+  if (!text && (!categoryL1 || !categoryL2 || !categoryL3)) {
+    return { ok: false, error: "ソーステキスト、またはL1/L2/L3を入力してください" };
+  }
+
+  const config = readConfig_();
+  const grade = config.grade || "middle";
+  const level = config.level || "standard";
+  const requestedCount = Math.max(1, Math.min(20, Number(payload && payload.numQuestions) || 5));
+  const generatedCards = text
+    ? extractCardsWithGemini_(text, requestedCount, grade, level)
+    : generateCardsFromCategoryWithGemini_(categoryL1, categoryL2, categoryL3, requestedCount, grade, level);
+
+  if (!Array.isArray(generatedCards) || generatedCards.length === 0) {
+    return { ok: false, error: "問題の抽出に失敗しました" };
+  }
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    throw new Error("Sheet not found: " + SHEET_NAME);
+  }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const indexMap = buildHeaderIndexMap_(headers);
+  const idCol = getColumnIndexOrThrow_(indexMap, "id");
+  const generatedIds = generateSequentialIds_(sheet, idCol, generatedCards.length);
+
+  const startRow = sheet.getLastRow() + 1;
+  const values = generatedCards.map(function (card, idx) {
+    return [
+      generatedIds[idx],
+      categoryL1,
+      categoryL2,
+      categoryL3,
+      String(card.question || ""),
+      String(card.answer || ""),
+      String(card.description || ""),
+      "",
+      "yet"
+    ];
+  });
+
+  sheet.getRange(startRow, 1, values.length, 9).setValues(values);
+
+  return {
+    ok: true,
+    count: generatedCards.length,
+    cards: generatedCards.map(function (card, idx) {
+      return {
+        id: String(generatedIds[idx] || ""),
+        question: String(card.question || ""),
+        answer: String(card.answer || ""),
+        description: String(card.description || "")
+      };
+    })
+  };
+}
+
+function generateCardsFromCategoryWithGemini_(categoryL1, categoryL2, categoryL3, num, grade, level) {
+  const prompt = [
+    "あなたは教育のエキスパートです。",
+    "対象: " + grade + "（" + level + "レベル）",
+    "以下のカテゴリに沿って、重要なポイントを学習するためのフラッシュカードを" + num + "問作成してください。",
+    "カテゴリL1: " + categoryL1,
+    "カテゴリL2: " + categoryL2,
+    "カテゴリL3: " + categoryL3,
+    "出力は必ずJSON配列形式のみとしてください。Markdownのコードブロックや説明文は絶対に含めないでください。",
+    "形式:",
+    "[",
+    "  {\"question\": \"問題文\", \"answer\": \"解答\", \"description\": \"解説\"}",
+    "]"
+  ].join("\n");
+
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }]
+  };
+
+  const json = callGeminiApi_(payload, "application/json");
+  const text = extractGeminiText_(json);
+  const parsed = parseJsonText_(text);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Gemini response is not an array");
+  }
+
+  return parsed.slice(0, num).map(function (card) {
+    return {
+      question: String(card && card.question || ""),
+      answer: String(card && card.answer || ""),
+      description: String(card && card.description || "")
+    };
+  });
+}
+
+function handleGenerateSingleAnswerRequest_(payload) {
+  const question = String(payload && payload.question || "").trim();
+  if (!question) {
+    return { ok: false, error: "問題が空です" };
+  }
+
+  const config = readConfig_();
+  const generated = generateAnswerWithGemini_(
+    question,
+    String(payload && payload.categoryL1 || ""),
+    String(payload && payload.categoryL2 || ""),
+    String(payload && payload.categoryL3 || ""),
+    config.grade || "middle",
+    config.level || "standard"
+  );
+
+  if (!generated.answer && !generated.description) {
+    return { ok: false, error: "解答・解説の生成に失敗しました" };
+  }
+
+  return {
+    ok: true,
+    answer: String(generated.answer || ""),
+    description: String(generated.description || "")
+  };
+}
+
+function extractCardsWithGemini_(sourceText, num, grade, level) {
+  const prompt = [
+    "あなたは教育のエキスパートです。",
+    "対象: " + grade + "（" + level + "レベル）",
+    "以下の【学習テキスト】を読み込み、重要なポイントを学習するためのフラッシュカードを" + num + "問作成してください。",
+    "出力は必ずJSON配列形式のみとしてください。Markdownのコードブロックや説明文は絶対に含めないでください。",
+    "形式:",
+    "[",
+    "  {\"question\": \"問題文\", \"answer\": \"解答\", \"description\": \"解説\"}",
+    "]",
+    "【学習テキスト】",
+    sourceText
+  ].join("\n");
+
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }]
+  };
+
+  const json = callGeminiApi_(payload, "application/json");
+  const text = extractGeminiText_(json);
+  const parsed = parseJsonText_(text);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Gemini response is not an array");
+  }
+
+  return parsed.slice(0, num).map(function (card) {
+    return {
+      question: String(card && card.question || ""),
+      answer: String(card && card.answer || ""),
+      description: String(card && card.description || "")
+    };
+  });
+}
+
+function generateAnswerWithGemini_(question, categoryL1, categoryL2, categoryL3, grade, level) {
+  const prompt = [
+    "あなたは教育のエキスパートです。",
+    "対象: " + grade + "（" + level + "レベル）",
+    "以下のフラッシュカードの問題に対して、学習者が覚えるべき簡潔な解答と、理解を助ける解説を作成してください。",
+    "カテゴリL1: " + categoryL1,
+    "カテゴリL2: " + categoryL2,
+    "カテゴリL3: " + categoryL3,
+    "出力は必ずJSONオブジェクト形式のみとしてください。Markdownのコードブロックや説明文は絶対に含めないでください。",
+    "形式:",
+    "{\"answer\": \"解答\", \"description\": \"解説\"}",
+    "問題:",
+    question
+  ].join("\n");
+
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }]
+  };
+
+  const json = callGeminiApi_(payload, "application/json");
+  const text = extractGeminiText_(json);
+  const parsed = parseJsonText_(text);
+
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+    throw new Error("Gemini response is not an object");
+  }
+
+  return {
+    answer: String(parsed.answer || ""),
+    description: String(parsed.description || "")
+  };
 }
 
 // Cards シートを読み込み、ヘッダー名ベースでJSON化する。
@@ -94,7 +314,7 @@ function readCardsFromSheet_() {
   });
 }
 
-// 送信された {id, status} を使って status 列を更新する。
+// 送信された {id, status} またはカード本文更新イベントを Cards シートへ反映する。
 function applyStatusUpdates_(items) {
   if (!items.length) {
     return 0;
@@ -106,7 +326,7 @@ function applyStatusUpdates_(items) {
   }
 
   const values = sheet.getDataRange().getValues();
-  if (values.length < 2) {
+  if (values.length < 1) {
     return 0;
   }
 
@@ -122,6 +342,23 @@ function applyStatusUpdates_(items) {
     throw new Error("Columns id/status not found");
   }
 
+  const cardColumns = [
+    "id",
+    "categoryL1",
+    "categoryL2",
+    "categoryL3",
+    "question",
+    "answer",
+    "description",
+    "imageId",
+    "status"
+  ];
+  cardColumns.forEach(function (col) {
+    if (typeof indexMap[col] !== "number") {
+      throw new Error("Missing required column: " + col);
+    }
+  });
+
   const rowById = {};
   for (let r = 1; r < values.length; r += 1) {
     const id = String(values[r][idCol] || "");
@@ -130,24 +367,78 @@ function applyStatusUpdates_(items) {
     }
   }
 
-  const targets = [];
+  let updatedCount = 0;
   items.forEach(function (item) {
     const id = String(item.id || "");
+    if (!id) {
+      return;
+    }
+
+    if (item.type === "cardUpsert") {
+      const card = {
+        id: id,
+        categoryL1: String(item.categoryL1 || ""),
+        categoryL2: String(item.categoryL2 || ""),
+        categoryL3: String(item.categoryL3 || ""),
+        question: String(item.question || ""),
+        answer: String(item.answer || ""),
+        description: String(item.description || ""),
+        imageId: String(item.imageId || ""),
+        status: String(item.status || "yet")
+      };
+      const rowValues = cardColumns.map(function (col) {
+        return card[col] || "";
+      });
+      const row = rowById[id];
+      if (row) {
+        sheet.getRange(row, 1, 1, rowValues.length).setValues([rowValues]);
+      } else {
+        sheet.appendRow(rowValues);
+        rowById[id] = sheet.getLastRow();
+      }
+      updatedCount += 1;
+      return;
+    }
+
+    if (item.type === "cardDelete") {
+      const row = rowById[id];
+      if (row) {
+        sheet.deleteRow(row);
+        updatedCount += 1;
+        values.splice(row - 1, 1);
+        Object.keys(rowById).forEach(function (key) {
+          if (rowById[key] > row) {
+            rowById[key] -= 1;
+          }
+        });
+        delete rowById[id];
+      }
+      return;
+    }
+
     const status = String(item.status || "");
-    if (!id || !status) {
+    if (!status) {
       return;
     }
     const row = rowById[id];
     if (row) {
-      targets.push({ row: row, status: status });
+      sheet.getRange(row, statusCol + 1).setValue(status);
+      updatedCount += 1;
     }
   });
 
-  targets.forEach(function (t) {
-    sheet.getRange(t.row, statusCol + 1).setValue(t.status);
-  });
+  sortCardsSheet_(sheet, indexMap);
+  return updatedCount;
+}
 
-  return targets.length;
+function sortCardsSheet_(sheet, indexMap) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 2) {
+    return;
+  }
+  const lastCol = sheet.getLastColumn();
+  const idCol = indexMap.id + 1;
+  sheet.getRange(2, 1, lastRow - 1, lastCol).sort({ column: idCol, ascending: true });
 }
 
 // スプレッドシート起動時に管理メニューを追加する。
@@ -328,6 +619,59 @@ function generateSequentialIds_(sheet, idCol, count) {
     ids.push("c" + String(n).padStart(width, "0"));
   }
   return ids;
+}
+
+function handleUpdateAppConfigRequest_(payload) {
+  const grade = String(payload && payload.grade || "").trim();
+  const difficulty = String(payload && payload.difficulty || "").trim();
+  const allowedGrades = ["中学1年", "中学2年", "中学3年", "高校1年", "高校2年", "高校3年"];
+  const allowedDifficulties = ["簡単", "標準", "難しい", "超難しい"];
+
+  if (allowedGrades.indexOf(grade) === -1) {
+    return { ok: false, error: "学年の値が不正です" };
+  }
+  if (allowedDifficulties.indexOf(difficulty) === -1) {
+    return { ok: false, error: "難易度の値が不正です" };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(CONFIG_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(CONFIG_SHEET);
+    sheet.getRange(1, 1, 1, 2).setValues([["key", "value"]]);
+  }
+
+  const values = sheet.getDataRange().getValues();
+  const rowByKey = {};
+  values.forEach(function (row, idx) {
+    const key = String(row[0] || "").trim();
+    if (key) {
+      rowByKey[key] = idx + 1;
+    }
+  });
+
+  setConfigValue_(sheet, rowByKey, "targetGrade", grade);
+  setConfigValue_(sheet, rowByKey, "difficulty", difficulty);
+
+  return {
+    ok: true,
+    config: {
+      grade: grade,
+      level: difficulty
+    }
+  };
+}
+
+function setConfigValue_(sheet, rowByKey, key, value) {
+  const row = rowByKey[key];
+  if (row) {
+    sheet.getRange(row, 2).setValue(value);
+    return;
+  }
+
+  const nextRow = sheet.getLastRow() + 1;
+  sheet.getRange(nextRow, 1, 1, 2).setValues([[key, value]]);
+  rowByKey[key] = nextRow;
 }
 
 // AppConfig から対象学年と難易度を読み込む。

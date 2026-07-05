@@ -1,4 +1,4 @@
-const STATIC_CACHE = "flashcard-static-v2";
+const STATIC_CACHE = "flashcard-static-v9";
 const IMAGE_CACHE = "flashcard-images-v2";
 const STATIC_ASSETS = [
   "./",
@@ -63,7 +63,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.hostname === "docs.google.com" && request.method === "GET") {
+  if ((url.hostname === "docs.google.com" || url.hostname === "drive.google.com") && request.method === "GET") {
     event.respondWith(
       caches.open(IMAGE_CACHE).then((cache) =>
         cache.match(request).then((cached) => {

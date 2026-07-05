@@ -17,6 +17,12 @@
         <button id="syncButton" class="btn btn-primary" type="button">同期</button>
       </header>
 
+      <section class="status-panel card">
+        <div class="lamp"><span class="dot" id="onlineLamp"></span><span id="onlineText">オフライン</span></div>
+        <div class="lamp"><span class="dot" id="cacheLamp"></span><span id="cacheText">ローカル件数: 0</span></div>
+        <div class="lamp"><span class="dot" id="queueLamp"></span><span id="queueText">同期待ち: 0</span></div>
+      </section>
+
       <section class="card connection-card">
         <details id="connectionAccordion" open>
           <summary>接続設定</summary>
@@ -24,56 +30,150 @@
             <label for="gasUrlInput">GAS エンドポイントURL</label>
             <input id="gasUrlInput" type="url" placeholder="https://script.google.com/.../exec" />
             <button id="saveConnectionButton" class="btn btn-primary" type="button">設定を保存</button>
+            <div class="config-grid">
+              <div>
+                <label for="aiGradeSelect">学年</label>
+                <select id="aiGradeSelect">
+                  <option value="中学1年">中学1年</option>
+                  <option value="中学2年">中学2年</option>
+                  <option value="中学3年">中学3年</option>
+                  <option value="高校1年">高校1年</option>
+                  <option value="高校2年">高校2年</option>
+                  <option value="高校3年">高校3年</option>
+                </select>
+              </div>
+              <div>
+                <label for="aiDifficultySelect">難易度</label>
+                <select id="aiDifficultySelect">
+                  <option value="簡単">簡単</option>
+                  <option value="標準">標準</option>
+                  <option value="難しい">難しい</option>
+                  <option value="超難しい">超難しい</option>
+                </select>
+              </div>
+            </div>
+            <button id="saveAppConfigButton" class="btn btn-secondary" type="button">AI設定をAppConfigに保存</button>
           </div>
         </details>
       </section>
 
-      <section class="range-panel card">
-        <h2>学習範囲</h2>
-        <div class="config-grid">
-          <div>
-            <label for="orderSelect">出題順</label>
-            <select id="orderSelect">
-              <option value="sequential">順番通り</option>
-              <option value="random">ランダム</option>
-            </select>
+      <section class="card create-panel">
+        <details class="create-accordion">
+          <summary>カード作成</summary>
+          <div class="accordion-body">
+            <div class="create-tabs" role="tablist" aria-label="作成モード">
+              <button id="createModeSingleButton" class="btn btn-secondary create-tab is-active" type="button">単体作成</button>
+              <button id="createModeTextButton" class="btn btn-secondary create-tab" type="button">テキスト抽出</button>
+            </div>
+
+            <div id="singleCreatePanel" class="create-panel-body">
+              <label for="createCardIdInput">カードID</label>
+              <input id="createCardIdInput" list="createCardIdList" type="text" placeholder="既存IDを入力すると編集できます" />
+              <datalist id="createCardIdList"></datalist>
+              <div class="config-grid">
+                <div>
+                  <label for="createLevel1Input">L1（科目）</label>
+                  <input id="createLevel1Input" list="createLevel1List" type="text" placeholder="科目を入力または選択" />
+                  <datalist id="createLevel1List"></datalist>
+                </div>
+                <div>
+                  <label for="createLevel2Input">L2（単元）</label>
+                  <input id="createLevel2Input" list="createLevel2List" type="text" placeholder="単元を入力または選択" />
+                  <datalist id="createLevel2List"></datalist>
+                </div>
+                <div>
+                  <label for="createLevel3Input">L3（項目）</label>
+                  <input id="createLevel3Input" list="createLevel3List" type="text" placeholder="項目を入力または選択" />
+                  <datalist id="createLevel3List"></datalist>
+                </div>
+              </div>
+              <label for="singleQuestionInput">問題</label>
+              <input id="singleQuestionInput" type="text" placeholder="例: 地球の公転周期は？" />
+              <label for="singleAnswerInput">解答</label>
+              <input id="singleAnswerInput" type="text" placeholder="例: 約365日" />
+              <label for="singleDescriptionInput">解説</label>
+              <textarea id="singleDescriptionInput" rows="4" placeholder="任意の解説"></textarea>
+              <div class="create-actions">
+                <button id="generateSingleButton" class="btn btn-secondary" type="button">AIで解答・解説を作成</button>
+                <button id="singleAddButton" class="btn btn-primary" type="button">カードを保存</button>
+                <button id="singleDeleteButton" class="btn btn-danger" type="button">カードを削除</button>
+              </div>
+            </div>
+
+            <div id="textCreatePanel" class="create-panel-body" hidden>
+              <div class="config-grid">
+                <div>
+                  <label for="createTextLevel1Input">L1（科目）</label>
+                  <input id="createTextLevel1Input" list="createTextLevel1List" type="text" placeholder="科目を入力または選択" />
+                  <datalist id="createTextLevel1List"></datalist>
+                </div>
+                <div>
+                  <label for="createTextLevel2Input">L2（単元）</label>
+                  <input id="createTextLevel2Input" list="createTextLevel2List" type="text" placeholder="単元を入力または選択" />
+                  <datalist id="createTextLevel2List"></datalist>
+                </div>
+                <div>
+                  <label for="createTextLevel3Input">L3（項目）</label>
+                  <input id="createTextLevel3Input" list="createTextLevel3List" type="text" placeholder="項目を入力または選択" />
+                  <datalist id="createTextLevel3List"></datalist>
+                </div>
+              </div>
+              <label for="textSourceInput">ソーステキスト</label>
+              <textarea id="textSourceInput" rows="8" placeholder="任意。空の場合はL1/L2/L3から生成します"></textarea>
+              <label for="textCountInput">生成数: <span id="textCountValue">5</span>問</label>
+              <input id="textCountInput" type="range" min="1" max="20" step="1" value="5" />
+              <button id="generateTextButton" class="btn btn-primary" type="button">AIで一括生成して登録</button>
+            </div>
+
+            <p id="createStatus" class="create-status" aria-live="polite"></p>
           </div>
-          <div>
-            <label for="directionSelect">出題方向</label>
-            <select id="directionSelect">
-              <option value="normal">通常（質問 → 解答）</option>
-              <option value="reverse">逆引き（解答 → 質問）</option>
-            </select>
-          </div>
-          <div>
-            <label for="filterSelect">抽出条件</label>
-            <select id="filterSelect">
-              <option value="all">全件</option>
-              <option value="pending">未完了（まだ）のみ</option>
-            </select>
-          </div>
-        </div>
-        <div class="config-grid">
-          <div>
-            <label for="level1Select">レベル1（科目）</label>
-            <select id="level1Select"></select>
-          </div>
-          <div>
-            <label for="level2Select">レベル2（単元）</label>
-            <select id="level2Select"></select>
-          </div>
-          <div>
-            <label for="level3Select">レベル3（項目）</label>
-            <select id="level3Select"></select>
-          </div>
-        </div>
-        <button id="startButton" class="btn btn-primary" type="button">学習開始</button>
+        </details>
       </section>
 
-      <section class="status-panel card">
-        <div class="lamp"><span class="dot" id="onlineLamp"></span><span id="onlineText">オフライン</span></div>
-        <div class="lamp"><span class="dot" id="cacheLamp"></span><span id="cacheText">ローカル件数: 0</span></div>
-        <div class="lamp"><span class="dot" id="queueLamp"></span><span id="queueText">同期待ち: 0</span></div>
+      <section class="range-panel card" id="rangePanel">
+        <details id="studyRangeAccordion" class="create-accordion" open>
+          <summary>学習範囲</summary>
+          <div class="accordion-body">
+            <div class="config-grid">
+              <div>
+                <label for="orderSelect">出題順</label>
+                <select id="orderSelect">
+                  <option value="sequential">順番通り</option>
+                  <option value="random">ランダム</option>
+                </select>
+              </div>
+              <div>
+                <label for="directionSelect">出題方向</label>
+                <select id="directionSelect">
+                  <option value="normal">通常（質問 → 解答）</option>
+                  <option value="reverse">逆引き（解答 → 質問）</option>
+                </select>
+              </div>
+              <div>
+                <label for="filterSelect">抽出条件</label>
+                <select id="filterSelect">
+                  <option value="all">全件</option>
+                  <option value="pending">未完了（まだ）のみ</option>
+                </select>
+              </div>
+            </div>
+            <div class="config-grid">
+              <div>
+                <label for="level1Select">レベル1（科目）</label>
+                <select id="level1Select"></select>
+              </div>
+              <div>
+                <label for="level2Select">レベル2（単元）</label>
+                <select id="level2Select"></select>
+              </div>
+              <div>
+                <label for="level3Select">レベル3（項目）</label>
+                <select id="level3Select"></select>
+              </div>
+            </div>
+            <button id="startButton" class="btn btn-primary" type="button">学習開始</button>
+          </div>
+        </details>
       </section>
 
       <main class="study-panel card" id="studyPanel" hidden>
@@ -82,8 +182,9 @@
           <div class="flashcard-inner" id="flashcardInner">
             <article class="flash-face flash-front">
               <h3 id="frontTitle">表面</h3>
-              <img id="frontImage" alt="カード画像" hidden />
               <p id="frontText"></p>
+              <img id="frontImage" alt="カード画像" hidden />
+              <div id="frontImagePlaceholder" class="front-image-placeholder" hidden>画像読み込み中…</div>
             </article>
             <article class="flash-face flash-back">
               <h3 id="backTitle">裏面</h3>
