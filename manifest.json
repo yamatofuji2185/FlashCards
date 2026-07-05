@@ -1,0 +1,21 @@
+{
+  "short_name": "FlashCard",
+  "name": "AI FlashCard",
+  "icons": [
+    {
+      "src": "icons/icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icons/icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#f3f0df",
+  "theme_color": "#005088",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}
