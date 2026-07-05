@@ -443,6 +443,19 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .editable-picker.is-open .editable-picker-list {
+    position: fixed;
+    top: 12vh;
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    max-height: none;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1000;
+    border-radius: 12px;
+  }
+
   .flashcard,
   .flashcard-inner,
   .flash-face {

@@ -1,4 +1,4 @@
-const STATIC_CACHE = "flashcard-static-v13";
+const STATIC_CACHE = "flashcard-static-v14";
 const IMAGE_CACHE = "flashcard-images-v2";
 const STATIC_ASSETS = [
   "./",
@@ -63,24 +63,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if ((url.hostname === "docs.google.com" || url.hostname === "drive.google.com") && request.method === "GET") {
-    event.respondWith(
-      caches.open(IMAGE_CACHE).then((cache) =>
-        cache.match(request).then((cached) => {
-          if (cached) {
-            return cached;
-          }
-          return fetch(request).then((response) => {
-            try {
-              const clone = response.clone();
-              cache.put(request, clone).catch(() => Promise.resolve());
-            } catch {
-              // cloneできないレスポンスはキャッシュせずそのまま返す。
-            }
-            return response;
-          });
-        })
-      )
-    );
-  }
+  // Google Drive images are intentionally not intercepted here.
+  // iOS Safari is more reliable when Drive image requests are handled directly by the browser.
 });

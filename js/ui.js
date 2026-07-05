@@ -122,6 +122,8 @@ export async function renderCard(card, settings, ui) {
   ui.frontImagePlaceholder.textContent = "画像読み込み中…";
   ui.frontImage.hidden = true;
   ui.frontImage.referrerPolicy = "no-referrer";
+  ui.frontImage.loading = "eager";
+  ui.frontImage.decoding = "async";
   ui.frontImage.onload = () => {
     if (!isCurrentImageRender(ui, renderToken)) {
       return;
@@ -146,7 +148,7 @@ export async function renderCard(card, settings, ui) {
     ui.frontImage.removeAttribute("src");
     ui.frontImage.hidden = true;
     ui.frontImagePlaceholder.hidden = false;
-    ui.frontImagePlaceholder.textContent = "画像を表示できません";
+    ui.frontImagePlaceholder.textContent = "画像を表示できません。Driveの共有設定を確認してください";
   };
 
   ui.frontImage.onerror = tryNextImageUrl;

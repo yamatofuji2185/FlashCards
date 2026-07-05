@@ -196,8 +196,7 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}, classNam
             itemButton.appendChild(labelEl);
           }
 
-          itemButton.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
+          itemButton.addEventListener("click", () => {
             inputEl.value = option.value;
             inputEl.dispatchEvent(new Event("input", { bubbles: true }));
             inputEl.dispatchEvent(new Event("change", { bubbles: true }));
