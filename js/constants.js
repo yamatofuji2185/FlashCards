@@ -34,9 +34,26 @@ export function normalizeDriveImageId(imageId) {
 }
 
 export function buildDriveImageUrl(imageId) {
+  return buildDriveImageUrls(imageId)[0] || "";
+}
+
+export function buildDriveImageUrls(imageId) {
+  const rawValue = String(imageId || "").trim();
+  if (/^https?:\/\//i.test(rawValue) && !/[?&]id=/.test(rawValue) && !/\/d\//.test(rawValue)) {
+    return [rawValue];
+  }
+
   const id = normalizeDriveImageId(imageId);
   if (!id) {
-    return "";
+    return [];
   }
-  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1000`;
+
+  const encodedId = encodeURIComponent(id);
+  return [
+    `https://drive.google.com/thumbnail?id=${encodedId}&sz=w1600`,
+    `https://drive.google.com/thumbnail?id=${encodedId}&sz=w1000`,
+    `https://drive.google.com/uc?export=view&id=${encodedId}`,
+    `https://docs.google.com/uc?export=view&id=${encodedId}`,
+    `https://drive.google.com/uc?export=download&id=${encodedId}`
+  ];
 }

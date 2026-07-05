@@ -222,6 +222,10 @@ select {
   box-shadow: 0 12px 30px rgba(20, 40, 60, 0.18);
 }
 
+.editable-picker-card-id .editable-picker-list {
+  max-height: min(520px, 58vh);
+}
+
 .editable-picker-option {
   width: 100%;
   border: 0;

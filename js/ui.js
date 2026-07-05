@@ -1,4 +1,4 @@
-import { STATUS, buildDriveImageUrl } from "./constants.js";
+import { STATUS, buildDriveImageUrls } from "./constants.js";
 
 function beginImageRender(ui) {
   const token = String(Date.now()) + "-" + String(Math.random());
@@ -110,8 +110,8 @@ export async function renderCard(card, settings, ui) {
     return;
   }
 
-  const imageUrl = buildDriveImageUrl(card.imageId);
-  if (!imageUrl) {
+  const imageUrls = buildDriveImageUrls(card.imageId);
+  if (imageUrls.length === 0) {
     resetFrontImage(ui);
     return;
   }
@@ -129,18 +129,28 @@ export async function renderCard(card, settings, ui) {
     ui.frontImagePlaceholder.hidden = true;
     ui.frontImage.hidden = false;
   };
-  ui.frontImage.onerror = () => {
+  let imageUrlIndex = 0;
+  const tryNextImageUrl = () => {
     if (!isCurrentImageRender(ui, renderToken)) {
       return;
     }
+
+    const nextUrl = imageUrls[imageUrlIndex];
+    imageUrlIndex += 1;
+    if (nextUrl) {
+      ui.frontImage.src = nextUrl;
+      return;
+    }
+
     releaseOptimizedImageUrl(ui.frontImage);
     ui.frontImage.removeAttribute("src");
     ui.frontImage.hidden = true;
-    ui.frontImagePlaceholder.hidden = true;
-    ui.frontImagePlaceholder.textContent = "";
+    ui.frontImagePlaceholder.hidden = false;
+    ui.frontImagePlaceholder.textContent = "画像を表示できません";
   };
 
-  ui.frontImage.src = imageUrl;
+  ui.frontImage.onerror = tryNextImageUrl;
+  tryNextImageUrl();
 }
 
 // ステータスランプの色と文言を更新する。

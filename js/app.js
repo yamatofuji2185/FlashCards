@@ -107,7 +107,8 @@ function optionMatchesInput(option, inputValue) {
 }
 
 function limitOptionsForInput(options, inputValue, limit = 60) {
-  return options.filter((option) => option.value && optionMatchesInput(option, inputValue)).slice(0, limit);
+  const filtered = options.filter((option) => option.value && optionMatchesInput(option, inputValue));
+  return Number.isFinite(limit) ? filtered.slice(0, limit) : filtered;
 }
 
 function simpleOptions(values) {
@@ -142,9 +143,9 @@ function level3Options(level1Value, level2Value) {
   return simpleOptions(toUniqueSortedValues(filtered.map((card) => card.categoryL3)));
 }
 
-function createEditablePicker(inputEl, getOptions, onSelect = () => {}) {
+function createEditablePicker(inputEl, getOptions, onSelect = () => {}, className = "") {
   const wrapper = document.createElement("div");
-  wrapper.className = "editable-picker";
+  wrapper.className = ["editable-picker", className].filter(Boolean).join(" ");
   inputEl.parentNode.insertBefore(wrapper, inputEl);
   wrapper.appendChild(inputEl);
 
@@ -167,7 +168,7 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}) {
     isOpen: false,
     render(showAll = false) {
       const rawOptions = getOptions();
-      const options = limitOptionsForInput(rawOptions, showAll ? "" : inputEl.value);
+      const options = limitOptionsForInput(rawOptions, showAll ? "" : inputEl.value, showAll ? Infinity : 80);
       listEl.innerHTML = "";
 
       if (options.length === 0) {
@@ -256,7 +257,7 @@ function createEditablePicker(inputEl, getOptions, onSelect = () => {}) {
 
 function setupEditablePickers() {
   state.editablePickers = [
-    createEditablePicker(els.createCardIdInput, cardIdOptions, loadSingleCardForEdit),
+    createEditablePicker(els.createCardIdInput, cardIdOptions, loadSingleCardForEdit, "editable-picker-card-id"),
     createEditablePicker(els.createLevel1Input, level1Options, () => {
       populateCreateLevel2(state.cards);
       populateCreateLevel3(state.cards);
